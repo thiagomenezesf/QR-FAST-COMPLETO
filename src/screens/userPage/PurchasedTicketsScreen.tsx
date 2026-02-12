@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/AppNavigator';
+import { RootStackParamList } from '../../types/RootStackParamList';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'IngressosComprados'>;
 
@@ -61,8 +61,8 @@ export default function PurchasedTicketsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Eventos Disponíveis</Text>
-      <Text style={styles.subtitle}>Escolha seu próximo evento 🎉</Text>
+      <Text style={styles.title}>Ingressos Adquiridos</Text>
+      <Text style={styles.subtitle}>Verifique seus ingressos 🎟️</Text>
 
       <FlatList
         data={events}
