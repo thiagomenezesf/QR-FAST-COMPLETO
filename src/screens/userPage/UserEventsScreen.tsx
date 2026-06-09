@@ -1,133 +1,320 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, StatusBar, ActivityIndicator, RefreshControl, Image, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../services/supabase';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'UserPage'>;
 
+// Função de formatação de data (Mantida como a sua original)
+const formatDateBadge = (dateString: string) => {
+  if (!dateString) return { day: '--', month: '---' };
+  try {
+    const separator = dateString.includes('/') ? '/' : '-';
+    const parts = dateString.split(separator);
+    let year, monthIndex, day;
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0]);
+      monthIndex = parseInt(parts[1]) - 1;
+      day = parseInt(parts[2]);
+    } else {
+      year = parseInt(parts[2]);
+      monthIndex = parseInt(parts[1]) - 1;
+      day = parseInt(parts[0]);
+    }
+    const date = new Date(year, monthIndex, day);
+    const dayFormatted = day.toString().padStart(2, '0');
+    const monthFormatted = date.toLocaleString('pt-BR', { month: 'short' })
+      .replace('.', '').toUpperCase().substring(0, 3);
+    return { day: dayFormatted, month: monthFormatted };
+  } catch (e) {
+    return { day: '??', month: '???' };
+  }
+};
+
 export default function UserEventsScreen() {
-  
   const navigation = useNavigation<NavProps>();
+  const [events, setEvents] = useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
-  // Mock de eventos (depois vem do banco)
-  const [events] = useState([
-    {
-      id: '1',
-      title: 'Festival de Música',
-      date: '20/10/2026',
-      location: 'São Paulo - SP',
-      price: 'R$ 50,00',
-    },
-    {
-      id: '2',
-      title: 'Palestra Tech',
-      date: '05/11/2026',
-      location: 'Online',
-      price: 'Gratuito',
-    },
-    {
-      id: '3',
-      title: 'Festa Universitária',
-      date: '12/12/2026',
-      location: 'Campinas - SP',
-      price: 'R$ 30,00',
-    },
-  ]);
+  const fetchEvents = async () => {
+    try {
+      console.log("🔍 Buscando eventos no Supabase...");
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
 
-  const renderEvent = ({ item }: any) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('DetalhesEventos', { eventId: item.id })}
-    >
-      <LinearGradient
-        colors={['#b2d3bc', '#bed1c4', '#99b19f']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.card}
+      if (error) throw error;
+
+      if (data) {
+        console.log(`✅ ${data.length} eventos encontrados!`);
+        setEvents(data);
+        setFilteredEvents(data); // Garante que a lista visível receba os dados
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao carregar eventos:', error.message);
+      Alert.alert("Erro", "Não foi possível carregar os eventos.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // FUNÇÃO DE FILTRO MELHORADA (Blindada contra erros)
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    if (!text || text.trim() === '') {
+      setFilteredEvents(events);
+    } else {
+      const query = text.toLowerCase();
+      const filtered = events.filter((event) => {
+        const title = event.title?.toLowerCase() || '';
+        const location = event.location?.toLowerCase() || '';
+        const category = event.category?.toLowerCase() || '';
+        return title.includes(query) || location.includes(query) || category.includes(query);
+      });
+      setFilteredEvents(filtered);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setSearchText(''); 
+    fetchEvents();
+  };
+
+  const renderEvent = ({ item }: any) => {
+    const { day, month } = formatDateBadge(item.date);
+    const hasBanner = item.banner_url && item.banner_url.startsWith('http');
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.95}
+        style={styles.cardContainer}
+        onPress={() => navigation.navigate('DetalhesEventos', { eventId: item.id })}
       >
-        <Text style={styles.eventTitle}>{item.title}</Text>
+        <View style={styles.card}>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={{ uri: hasBanner ? item.banner_url : 'https://via.placeholder.com/800x400.png?text=Evento+Sem+Foto' }} 
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
+            <View style={styles.floatingDateBadge}>
+              <Text style={styles.dateText}>{day}</Text>
+              <Text style={styles.monthText}>{month}</Text>
+            </View>
+            <View style={styles.floatingPrice}>
+               <Text style={styles.floatingPriceText}>
+                {typeof item.price === 'number' ? `R$ ${item.price.toFixed(2)}` : item.price}
+               </Text>
+            </View>
+          </View>
 
-        <Text style={styles.eventInfo}>📅 {item.date}</Text>
-        <Text style={styles.eventInfo}>📍 {item.location}</Text>
-        <Text style={styles.eventPrice}>🎟️ {item.price}</Text>
+          <View style={styles.cardBody}>
+            <Text style={styles.categoryText}>{item.category || 'PRÓXIMO EVENTO'}</Text>
+            <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
+            
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={16} color="#3BB85E" />
+              <Text style={styles.eventLocation} numberOfLines={1}>{item.location}</Text>
+            </View>
 
-        <View style={styles.buttonContainer}>
-          <Text style={styles.buttonText}>Ver detalhes</Text>
+            <LinearGradient
+                colors={['#3BB85E', '#276818']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionButton}
+            >
+                <Text style={styles.buttonText}>Ver Detalhes</Text>
+                <Ionicons name="arrow-forward" size={16} color="#FFF" />
+            </LinearGradient>
+          </View>
         </View>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Eventos Disponíveis</Text>
-      <Text style={styles.subtitle}>Escolha seu próximo evento 🎉</Text>
+      <StatusBar barStyle="dark-content" />
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Explorar</Text>
+        <View style={{width: 40}} /> 
+      </View>
 
       <FlatList
-        data={events}
-        keyExtractor={(item) => item.id}
+        data={filteredEvents}
+        extraData={filteredEvents} // Ajuda a FlatList a perceber mudanças no estado
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderEvent}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.introSection}>
+              <Text style={styles.welcomeText}>Eventos Disponíveis</Text>
+              <Text style={styles.subtitle}>Escolha sua próxima experiência 🎉</Text>
+            </View>
+
+            {/* BARRA DE BUSCA */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search-outline" size={20} color="#999" />
+                <TextInput
+                  placeholder="Pesquisar evento ou local..."
+                  placeholderTextColor="#999"
+                  style={styles.searchInput}
+                  value={searchText}
+                  onChangeText={handleSearch}
+                />
+                {searchText !== '' && (
+                  <TouchableOpacity onPress={() => handleSearch('')}>
+                    <Ionicons name="close-circle" size={20} color="#CCC" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        }
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#276818']} />
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator size="large" color="#276818" style={{ marginTop: 50 }} />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={50} color="#CCC" />
+              <Text style={styles.emptyText}>
+                {searchText === '' ? "Nenhum evento cadastrado." : "Nenhum evento corresponde à busca."}
+              </Text>
+            </View>
+          )
+        }
       />
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f2e9',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: '#FBFBFB' },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingTop: 50, 
+    paddingHorizontal: 20, 
+    paddingBottom: 10 
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#666',
-  },
-  card: {
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'black',
+  backBtn: { padding: 8, backgroundColor: '#FFF', borderRadius: 12, elevation: 2 },
+  title: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
+  introSection: { paddingHorizontal: 20, marginTop: 20, marginBottom: 15 },
+  welcomeText: { fontSize: 28, fontWeight: '900', color: '#1A1A1A' },
+  subtitle: { fontSize: 16, color: '#7C7C7C', marginTop: 4 },
+  
+  cardContainer: { paddingHorizontal: 20, marginBottom: 25 },
+  card: { 
+    backgroundColor: '#FFF', 
+    borderRadius: 28, 
+    overflow: 'hidden', 
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
   },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#fff',
+  imageContainer: { width: '100%', height: 180, position: 'relative' },
+  bannerImage: { width: '100%', height: '100%' },
+  
+  floatingDateBadge: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    alignItems: 'center',
+    minWidth: 55,
   },
-  eventInfo: {
-    color: '#fff',
-    marginBottom: 4,
-  },
-  eventPrice: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginTop: 6,
-  },
-  buttonContainer: {
-    marginTop: 14,
+  dateText: { fontSize: 20, fontWeight: '900', color: '#1A1A1A' },
+  monthText: { fontSize: 10, fontWeight: '700', color: '#3BB85E' },
+  
+  floatingPrice: {
+    position: 'absolute',
+    bottom: 15,
+    right: 15,
     backgroundColor: '#3BB85E',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  floatingPriceText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+
+  cardBody: { padding: 20 },
+  categoryText: { 
+    fontSize: 12, 
+    fontWeight: '800', 
+    color: '#3BB85E', 
+    letterSpacing: 1, 
+    marginBottom: 5 
+  },
+  eventTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A1A', marginBottom: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  eventLocation: { fontSize: 14, color: '#666', marginLeft: 6 },
+  
+  actionButton: {
+    flexDirection: 'row',
+    height: 50,
+    borderRadius: 15,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginRight: 10 },
+
+  emptyContainer: { alignItems: 'center', marginTop: 50 },
+  emptyText: { marginTop: 10, color: '#999', fontSize: 15 },
+
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    marginTop: 10,
   },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 15,
+    height: 55,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#1A1A1A',
+  }
 });

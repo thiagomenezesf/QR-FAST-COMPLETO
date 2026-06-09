@@ -1,0 +1,1 @@
+"# QR-FAST-COMPLETO" 

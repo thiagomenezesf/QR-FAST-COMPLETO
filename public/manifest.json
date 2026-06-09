@@ -1,0 +1,28 @@
+{
+  "short_name": "QR Fast",
+  "name": "QR Fast Check-in",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#276818",
+  "background_color": "#ffffff"
+}

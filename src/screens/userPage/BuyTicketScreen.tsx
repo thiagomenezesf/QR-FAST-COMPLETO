@@ -1,196 +1,278 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../services/supabase';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'ComprarIngresso'>;
 
 export default function BuyTicketScreen() {
-
   const navigation = useNavigation<NavProps>();
   const route = useRoute<any>();
-
   const { event } = route.params;
 
+  const [eventData, setEventData] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  const ticketPrice =
-    event.price === 'Gratuito' ? 0 : Number(event.price.replace('R$', '').replace(',', '.'));
+  useEffect(() => {
+    async function fetchEventDetails() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('events')
+          .select('available_tickets')
+          .eq('id', event.id)
+          .single();
+
+        if (error) throw error;
+        setEventData(data);
+      } catch (error) {
+        console.error('Erro ao buscar detalhes:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (event.id) fetchEventDetails();
+  }, [event.id]);
+
+  const ticketPrice = (() => {
+    if (!event.price || event.price === 'Gratuito') return 0;
+    if (typeof event.price === 'number') return event.price;
+    
+    if (typeof event.price === 'string') {
+      const cleaned = event.price
+        .replace('R$', '')
+        .replace(/\./g, '')
+        .replace(',', '.')
+        .trim();
+      return parseFloat(cleaned) || 0;
+    }
+    return 0;
+  })();
 
   const total = ticketPrice * quantity;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Comprar ingresso</Text>
-      <Text style={styles.subtitle}>Confira os dados antes de confirmar</Text>
+      <StatusBar barStyle="dark-content" />
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Checkout</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-      {/* Resumo do evento */}
-      <LinearGradient
-        colors={['#b2d3bc', '#bed1c4', '#99b19f']}
-        style={styles.card}
-      >
-        <Text style={styles.eventTitle}>{event.title}</Text>
-        <Text style={styles.text}>📅 {event.date}</Text>
-        <Text style={styles.text}>📍 {event.location}</Text>
-      </LinearGradient>
-
-      {/* Quantidade */}
-      <LinearGradient
-        colors={['#b2d3bc', '#bed1c4', '#99b19f']}
-        style={styles.card}
-      >
-        <Text style={styles.sectionTitle}>Quantidade</Text>
-
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity
-            onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-            style={styles.quantityButton}
-          >
-            <Text style={styles.quantityText}>-</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.quantityValue}>{quantity}</Text>
-
-          <TouchableOpacity
-            onPress={() => setQuantity((q) => q + 1)}
-            style={styles.quantityButton}
-          >
-            <Text style={styles.quantityText}>+</Text>
-          </TouchableOpacity>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionLabel}>Resumo do Evento</Text>
+        
+        <View style={styles.eventCard}>
+          <View style={styles.eventIconContainer}>
+            <Ionicons name="calendar" size={24} color="#276818" />
+          </View>
+          <View style={styles.eventDetails}>
+            <Text style={styles.eventTitle}>{event.title}</Text>
+            <Text style={styles.eventInfo}>📅 {event.date}</Text>
+            <Text style={styles.eventInfo} numberOfLines={1}>📍 {event.location}</Text>
+          </View>
         </View>
-      </LinearGradient>
 
-      {/* Total */}
-      <LinearGradient
-        colors={['#b2d3bc', '#bed1c4', '#99b19f']}
-        style={styles.card}
-      >
-        <Text style={styles.sectionTitle}>Total</Text>
-        <Text style={styles.total}>
-          {total === 0 ? 'Gratuito' : `R$ ${total.toFixed(2).replace('.', ',')}`}
-        </Text>
-      </LinearGradient>
+        <Text style={styles.sectionLabel}>Selecione a Quantidade</Text>
+        
+        <View style={styles.quantityCard}>
+          <Text style={styles.pricePerUnit}>Preço unitário: {event.price}</Text>
+          <View style={styles.counterContainer}>
+            <TouchableOpacity
+              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+              style={styles.counterButton}
+              activeOpacity={0.7}
+              disabled={loading}
+            >
+              <Ionicons name="remove" size={24} color="#276818" />
+            </TouchableOpacity>
 
-      {/* Aviso */}
-      <Text style={styles.warning}>
-        ⚠️ O ingresso é pessoal e intransferível. Após a confirmação, será gerado
-        um QR Code único para entrada no evento.
-      </Text>
+            <Text style={styles.quantityValue}>{quantity.toString().padStart(2, '0')}</Text>
 
-      {/* Confirmar */}
-      <TouchableOpacity
-        onPress={() =>
-          navigation.navigate('ConfirmarCompra', {
-            event,
-            quantity,
-            total,
-          })
-        }
-      >
-        <LinearGradient
-          colors={['#3BB85E', '#0A7D27']}
-          style={styles.confirmButton}
+            <TouchableOpacity
+              onPress={() => {
+                // CORREÇÃO AQUI: Apenas aumenta a quantidade, sem navegar
+                if (eventData) {
+                  if (eventData.available_tickets > quantity) {
+                    setQuantity((q) => q + 1);
+                  } else {
+                    Alert.alert('Limite atingido', 'Não há mais ingressos disponíveis.');
+                  }
+                } else {
+                  Alert.alert('Aguarde', 'Carregando disponibilidade...');
+                }
+              }}
+              style={styles.counterButton}
+              activeOpacity={0.7}
+              disabled={loading}
+            >
+              <Ionicons name="add" size={24} color="#276818" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.warningContainer}>
+          <Ionicons name="shield-checkmark-outline" size={20} color="#666" />
+          <Text style={styles.warningText}>
+            O ingresso é pessoal e intransferível. Um QR Code único será gerado para cada unidade.
+          </Text>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalLabel}>Total a pagar</Text>
+          <Text style={styles.totalValue}>
+            {total === 0 ? 'Gratuito' : `R$ ${total.toFixed(2).replace('.', ',')}`}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => {
+            if (eventData && eventData.available_tickets >= quantity) {
+              navigation.navigate('ConfirmarCompra', {
+                event,
+                quantity,
+                total,
+              });
+            } else {
+              Alert.alert('Indisponível', 'Quantidade selecionada não disponível em estoque.');
+            }
+          }}
+          disabled={loading}
+          style={[styles.confirmButtonContainer, loading && { opacity: 0.7 }]}
         >
-          <Text style={styles.confirmText}>Confirmar compra</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={['#3BB85E', '#276818']}
+            style={styles.confirmButton}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <>
+                <Text style={styles.confirmText}>Confirmar e Pagar</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f2e9',
-    padding: 20,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666',
-  },
-  card: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'black',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.7,
-    shadowRadius: 10,
-  },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 6,
-  },
-  text: {
-    color: '#fff',
-  },
-  sectionTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  quantityContainer: {
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  header: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: '#FFF',
   },
-  quantityButton: {
-    backgroundColor: '#3BB85E',
+  backButton: {
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 20,
   },
-  quantityText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A1A' },
+  scrollContent: { padding: 25 },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12,
   },
-  quantityValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  total: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  warning: {
-    textAlign: 'center',
-    color: '#555',
-    fontSize: 13,
-    marginVertical: 10,
-  },
-  confirmButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
+  eventCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 30,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'black',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    marginTop: 10,
+    borderColor: '#EEE',
   },
-  confirmText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  eventIconContainer: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
   },
+  eventDetails: { flex: 1 },
+  eventTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
+  eventInfo: { fontSize: 13, color: '#666', marginTop: 2 },
+  quantityCard: {
+    backgroundColor: '#FFF',
+    padding: 25,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EEE',
+    marginBottom: 20,
+  },
+  pricePerUnit: { fontSize: 14, color: '#666', marginBottom: 15 },
+  counterContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  counterButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: '#F0F7F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D0E7D2',
+  },
+  quantityValue: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginHorizontal: 30 },
+  warningContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  warningText: { flex: 1, fontSize: 12, color: '#666', marginLeft: 10, lineHeight: 18 },
+  footer: {
+    backgroundColor: '#FFF',
+    padding: 25,
+    paddingBottom: 40,
+    borderTopWidth: 1,
+    borderColor: '#EEE',
+  },
+  totalContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  totalLabel: { fontSize: 16, color: '#666', fontWeight: '500' },
+  totalValue: { fontSize: 24, fontWeight: '900', color: '#276818' },
+  confirmButtonContainer: {
+    height: 58,
+    borderRadius: 18,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#276818',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  confirmButton: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  confirmText: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginRight: 10 },
 });

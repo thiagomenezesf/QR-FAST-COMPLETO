@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   RecuperarSenha: undefined;
+  NovaSenha: undefined;
 
   // --- User Flow ---
   UserPage: undefined;
@@ -17,11 +18,15 @@ export type RootStackParamList = {
     total: number; 
   };
   IngressosComprados: undefined;
+  QRCodepage: {ticketId: string};
 
   // --- Admin Flow ---
   Administração: undefined;
   Pessoas: undefined;
-  PessoaDetalhes: { personId: string };
+  PessoaDetalhes: { ticketId: string };
   Dashboard: undefined;
   Scanner: undefined;
+  CreateEvent: undefined;
+  EditEvent: undefined;
+  AdminEventsList: undefined;
 };

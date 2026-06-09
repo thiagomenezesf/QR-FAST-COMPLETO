@@ -2,6 +2,7 @@
   "expo": {
     "name": "checkin-qr",
     "slug": "checkin-qr",
+    "scheme": "qr-fast-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,21 +11,39 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0b360b"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.seuusuario.checkinqr",
+      "infoPlist": {
+      "NSCameraUsageDescription": "Este aplicativo precisa da câmera para escanear os QR Codes dos ingressos."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff",
+      "package": "com.seuusuario.checkinqr",
+      "permissions": ["CAMERA"]
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "display": "standalone",
+      "lang": "pt-BR",
+      "backgroundColor": "#ffffff",
+      "themeColor": "#276818",
+      "description": "Sistema de Check-in via QR Code",
+      "output": "single"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1194ec15-ec91-4016-a620-d6430af0daa9"
+      }
     }
   }
 }
