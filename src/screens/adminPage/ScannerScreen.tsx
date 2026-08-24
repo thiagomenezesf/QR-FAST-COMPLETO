@@ -98,14 +98,14 @@ export default function ScannerScreen() {
                 .single();
 
             if (fetchError || !ticket) {
-                playFeedbackSound(false);
+                // playFeedbackSound(false);
                 Alert.alert("Erro", "Ingresso inválido ou não encontrado.", [{ text: "OK", onPress: resetScanner }]);
                 return;
             }
 
             // 2. VERIFICA SE JÁ FOI USADO
             if (ticket.status === 'used') {
-                playFeedbackSound(false);
+                // playFeedbackSound(false);
                 Alert.alert("Atenção", "Este ingresso JÁ FOI UTILIZADO!", [{ text: "OK", onPress: resetScanner }]);
                 return;
             }
@@ -119,7 +119,7 @@ export default function ScannerScreen() {
             if (updateError) throw updateError;
 
             // 4. SUCESSO TOTAL
-            playFeedbackSound(true);
+            // playFeedbackSound(true);
             
             const eventData = ticket.events as any;
             const eventTitle = Array.isArray(eventData) ? eventData[0]?.title : eventData?.title;
