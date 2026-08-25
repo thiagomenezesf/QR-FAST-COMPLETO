@@ -118,7 +118,7 @@ export default function CreateEventScreen() {
                         date: date, // Formato AAAA-MM-DD
                         price: numericPrice,
                         capacity: numericCapacity,
-                        available_tickets: numericCapacity,
+                        // available_tickets: numericCapacity,
                         rules: rulesArray,
                     }
                 ]);

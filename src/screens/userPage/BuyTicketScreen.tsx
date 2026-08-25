@@ -23,8 +23,8 @@ export default function BuyTicketScreen() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from('events')
-          .select('available_tickets')
+          .from('event_availability')
+          .select('*')
           .eq('id', event.id)
           .single();
 

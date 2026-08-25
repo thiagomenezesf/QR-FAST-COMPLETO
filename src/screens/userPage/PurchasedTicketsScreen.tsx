@@ -34,7 +34,9 @@ export default function PurchasedTicketsScreen() {
         .select(`
           id,
           status,
+          payment_id,
           payment_status,
+          price,
           events (
             id,
             title,

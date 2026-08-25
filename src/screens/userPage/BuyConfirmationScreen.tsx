@@ -101,7 +101,7 @@ export default function BuyConfirmationScreen() {
 
   // useEffect 2: Fica "vigiando" o paymentId. Assim que o ID aparecer, ele liga o vigilante
   useEffect(() => {
-    let statusChecker: NodeJS.Timeout;
+    let statusChecker: ReturnType<typeof setInterval>;
 
     if (pixData.paymentId && !isPaid) {
       statusChecker = setInterval(() => {
