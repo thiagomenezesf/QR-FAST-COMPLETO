@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 // Bibliotecas para Imagem
 import * as ImagePicker from 'expo-image-picker';
@@ -27,12 +29,25 @@ export default function CreateEventScreen() {
     const [bannerUrl, setBannerUrl] = useState('');
     const [rulesInput, setRulesInput] = useState('');
 
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
     // --- LÓGICA DE UPLOAD DE IMAGEM ---
     const pickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         
         if (status !== 'granted') {
-            Alert.alert('Permissão necessária', 'Precisamos de acesso às fotos para o banner.');
+            // Alert.alert('Permissão necessária', 'Precisamos de acesso às fotos para o banner.');
+            showAlert('error', 'Permissão necessária', 'Precisamos de acesso às fotos para o banner.', 'OK');
             return;
         }
 
@@ -73,9 +88,11 @@ export default function CreateEventScreen() {
                 .getPublicUrl(filePath);
 
             setBannerUrl(publicUrl);
-            Alert.alert('Sucesso', 'Banner carregado!');
+            // Alert.alert('Sucesso', 'Banner carregado!');
+            showAlert('success', 'Sucesso', 'Banner carregado!', 'OK');
         } catch (error: any) {
-            Alert.alert('Erro no upload', error.message);
+            // Alert.alert('Erro no upload', error.message);
+            showAlert('error', 'Erro no upload', error.message, 'OK');
         } finally {
             setUploading(false);
         }
@@ -84,7 +101,8 @@ export default function CreateEventScreen() {
     // --- CRIAR EVENTO ---
     const handleCreateEvent = async () => {
         if (!title.trim() || !price || !date || !location.trim()) {
-            Alert.alert('Atenção', 'Preencha os campos obrigatórios (Título, Preço, Localização e Data).');
+            // Alert.alert('Atenção', 'Preencha os campos obrigatórios (Título, Preço, Localização e Data).');
+            showAlert('warning', 'Atenção', 'Preencha os campos obrigatórios (Título, Preço, Localização e Data).', 'OK');
             return;
         }
 
@@ -100,7 +118,8 @@ export default function CreateEventScreen() {
             const numericPrice = parseFloat(cleanedPrice);
 
             if (isNaN(numericPrice)) {
-                Alert.alert('Erro no Preço', 'Insira um valor válido.');
+                // Alert.alert('Erro no Preço', 'Insira um valor válido.');
+                showAlert('error', 'Erro no Preço', 'Insira um valor válido.', 'OK');
                 setLoading(false);
                 return;
             }
@@ -125,11 +144,13 @@ export default function CreateEventScreen() {
 
             if (error) throw error;
 
-            Alert.alert('Sucesso', 'Evento criado com sucesso!', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            // Alert.alert('Sucesso', 'Evento criado com sucesso!', [
+            //     { text: 'OK', onPress: () => navigation.goBack() }
+            // ]);
+            showAlert('success', 'Sucesso', 'Evento criado com sucesso!', 'OK', () => navigation.goBack());
         } catch (error: any) {
-            Alert.alert('Erro ao criar', error.message);
+            // Alert.alert('Erro ao criar', error.message);
+            showAlert('error', 'Erro ao criar', error.message, 'OK');
         } finally {
             setLoading(false);
         }
@@ -226,6 +247,16 @@ export default function CreateEventScreen() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </KeyboardAvoidingView>
     );
 }

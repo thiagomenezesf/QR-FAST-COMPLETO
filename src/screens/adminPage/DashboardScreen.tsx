@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
@@ -26,6 +28,18 @@ export default function DashboardScreen() {
     const [totalTickets, setTotalTickets] = useState(0);
     const [totalCheckins, setTotalCheckins] = useState(0);
     const [eventStats, setEventStats] = useState<EventStat[]>([]);
+
+    const {
+        alertVisible,
+        alertType,
+        alertTitle,
+        alertMessage,
+        alertButtonText,
+        alertCancelText,
+        showAlert,
+        handleAlertPress,
+        handleAlertCancel,
+    } = useCustomAlert();
 
     useEffect(() => {
         fetchDashboardData();
@@ -179,6 +193,16 @@ export default function DashboardScreen() {
                 ))}
 
             </ScrollView>
+            <CustomAlert
+                                        visible={alertVisible}
+                                        type={alertType}
+                                        title={alertTitle}
+                                        message={alertMessage}
+                                        buttonText={alertButtonText}
+                                        cancelText={alertCancelText}
+                                        onPress={handleAlertPress}
+                                        onCancel={handleAlertCancel}
+                                    />
         </View>
     );
 }

@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase'; // Import do Supabase
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 const MenuButton = ({ title, subtitle, icon, onPress, color }: any) => (
     <TouchableOpacity style={styles.menuCard} onPress={onPress} activeOpacity={0.7}>
@@ -24,6 +26,18 @@ export default function AdmScreen() {
     const [isPressedQR, setIsPressedQR] = useState(false);
     const [showLogout, setShowLogout] = useState(false); // Estado para controlar o menu de logout
 
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
     // Função de Logout para o ADM
     const handleLogout = async () => {
         try {
@@ -35,7 +49,8 @@ export default function AdmScreen() {
                 routes: [{ name: 'Login' }],
             });
         } catch (error: any) {
-            Alert.alert("Erro ao sair", error.message);
+            // Alert.alert("Erro ao sair", error.message);
+            showAlert('error', 'Erro ao sair', error.message, 'OK');
         }
     };
 
@@ -147,6 +162,16 @@ export default function AdmScreen() {
                     O sistema sincroniza automaticamente as entradas validadas.
                 </Text>
             </View>
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </View>
     );
 }

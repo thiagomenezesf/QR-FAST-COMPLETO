@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-type AlertType = 'success' | 'error' | 'warning';
+type AlertType = 'success' | 'error' | 'warning' | 'info';
 
 interface CustomAlertProps {
     visible: boolean;
@@ -10,7 +10,9 @@ interface CustomAlertProps {
     title: string;
     message: string;
     buttonText?: string;
-    onPress: () => void;
+    cancelText?: string;
+    onPress?: () => void;
+    onCancel?: () => void;
 }
 
 export default function CustomAlert({
@@ -19,50 +21,77 @@ export default function CustomAlert({
     title,
     message,
     buttonText = 'OK',
+    cancelText,
     onPress,
+    onCancel,
 }: CustomAlertProps) {
     const iconName =
         type === 'success'
             ? 'checkmark-circle'
             : type === 'warning'
-            ? 'warning'
-            : 'close-circle';
+            ? 'information-circle-outline'
+            : (type === 'error' ? 'close-circle' : 'information-circle-outline');
 
     const iconColor =
         type === 'success'
             ? '#3BB85E'
             : type === 'warning'
             ? '#E6A700'
-            : '#D9534F';
+            : (type === 'error' ? '#D9534F' : '#405466');
 
     return (
         <Modal
             visible={visible}
             transparent
             animationType="fade"
-            onRequestClose={onPress}
+            onRequestClose={onCancel || onPress}
         >
             <View style={styles.overlay}>
                 <View style={styles.container}>
+
                     <Ionicons
                         name={iconName}
                         size={60}
                         color={iconColor}
                     />
 
-                    <Text style={styles.title}>{title}</Text>
+                    <Text style={styles.title}>
+                        {title}
+                    </Text>
 
-                    <Text style={styles.message}>{message}</Text>
+                    <Text style={styles.message}>
+                        {message}
+                    </Text>
 
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: iconColor }]}
-                        onPress={onPress}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={styles.buttonText}>
-                            {buttonText}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.buttonsContainer}>
+
+                        {cancelText && (
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={onCancel}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.cancelButtonText}>
+                                    {cancelText}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                            style={[
+                                styles.button,
+                                { backgroundColor: iconColor },
+                                cancelText && styles.buttonWithCancel,
+                            ]}
+                            onPress={onPress}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.buttonText}>
+                                {buttonText}
+                            </Text>
+                        </TouchableOpacity>
+
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -98,7 +127,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#222',
+        color: '#FFF',
         marginTop: 15,
         textAlign: 'center',
     },
@@ -112,11 +141,35 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
 
-    button: {
+    buttonsContainer: {
         width: '100%',
+        flexDirection: 'row',
+        gap: 10,
+    },
+
+    button: {
+        flex: 1,
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
+    },
+
+    buttonWithCancel: {
+        flex: 1,
+    },
+
+    cancelButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+        backgroundColor: '#666',
+    },
+
+    cancelButtonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 
     buttonText: {

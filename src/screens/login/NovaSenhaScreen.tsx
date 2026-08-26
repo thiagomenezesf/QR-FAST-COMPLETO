@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 export default function NovaSenhaScreen() {
     const navigation = useNavigation<any>();
@@ -14,20 +16,35 @@ export default function NovaSenhaScreen() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
     const handleUpdatePassword = async () => {
         // Validações básicas
         if (!password || !confirmPassword) {
-            Alert.alert("Erro", "Por favor, preencha todos os campos.");
+            // Alert.alert("Erro", "Por favor, preencha todos os campos.");
+            showAlert('warning', 'Erro', 'Por favor, preencha todos os campos.', 'OK');
             return;
         }
 
         if (password.length < 6) {
-            Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
+            // Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
+            showAlert('warning', 'Erro', 'A senha deve ter pelo menos 6 caracteres.', 'OK');
             return;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert("Erro", "As senhas não coincidem.");
+            // Alert.alert("Erro", "As senhas não coincidem.");
+            showAlert('warning', 'Erro', 'As senhas não coincidem.', 'OK');
             return;
         }
 
@@ -41,14 +58,16 @@ export default function NovaSenhaScreen() {
 
             if (error) throw error;
 
-            Alert.alert(
-                "Senha Atualizada!",
-                "Sua nova senha foi salva com sucesso. Você já pode acessar sua conta.",
-                [{ text: "Fazer Login", onPress: () => navigation.navigate('Login') }]
-            );
+            // Alert.alert(
+            //     "Senha Atualizada!",
+            //     "Sua nova senha foi salva com sucesso. Você já pode acessar sua conta.",
+            //     [{ text: "Fazer Login", onPress: () => navigation.navigate('Login') }]
+            // );
+            showAlert('success', 'Senha Atualizada!', 'Sua nova senha foi salva com sucesso. Você já pode acessar sua conta.', 'Fazer Login', () => navigation.navigate('Login'));
 
         } catch (error: any) {
-            Alert.alert("Erro ao atualizar", error.message);
+            // Alert.alert("Erro ao atualizar", error.message);
+            showAlert('error', 'Erro ao atualizar', error.message, 'OK');
         } finally {
             setLoading(false);
         }
@@ -121,6 +140,17 @@ export default function NovaSenhaScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </KeyboardAvoidingView>
     );
 }

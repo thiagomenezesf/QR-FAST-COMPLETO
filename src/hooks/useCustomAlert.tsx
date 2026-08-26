@@ -1,6 +1,16 @@
 import { useState } from 'react';
 
-type AlertType = 'success' | 'error' | 'warning';
+type AlertType = 'success' | 'error' | 'warning' | 'info';
+
+// interface ShowAlertParams {
+//     type: AlertType;
+//     title: string;
+//     message: string;
+//     buttonText?: string;
+//     onPress?: () => void;
+//     cancelText?: string;
+//     onCancel?: () => void;
+// }
 
 export function useCustomAlert() {
     const [alertVisible, setAlertVisible] = useState(false);
@@ -9,19 +19,47 @@ export function useCustomAlert() {
     const [alertMessage, setAlertMessage] = useState('');
     const [alertButtonText, setAlertButtonText] = useState('OK');
     const [alertOnPress, setAlertOnPress] = useState<() => void>(() => {});
+    const [alertCancelText, setAlertCancelText] = useState<string | undefined>();
+    const [alertOnCancel, setAlertOnCancel] = useState<() => void>(() => {});
+
+    // const showAlert = ({
+    //     type,
+    //     title,
+    //     message,
+    //     buttonText = 'OK',
+    //     onPress,
+    //     cancelText,
+    //     onCancel,
+    // }: ShowAlertParams) => {
+    //     setAlertType(type);
+    //     setAlertTitle(title);
+    //     setAlertMessage(message);
+    //     setAlertButtonText(buttonText);
+
+    //     setAlertOnPress(() => onPress || (() => {}));
+
+    //     setAlertCancelText(cancelText);
+    //     setAlertOnCancel(() => onCancel || (() => {}));
+
+    //     setAlertVisible(true);
+    // };
 
     const showAlert = (
         type: AlertType,
         title: string,
         message: string,
         buttonText: string = 'OK',
-        onPress?: () => void
+        onPress?: () => void,
+        cancelText?: string,
+        onCancel?: () => void
     ) => {
         setAlertType(type);
         setAlertTitle(title);
         setAlertMessage(message);
         setAlertButtonText(buttonText);
         setAlertOnPress(() => onPress || (() => {}));
+        setAlertCancelText(cancelText);
+        setAlertOnCancel(() => onCancel || (() => {}));
         setAlertVisible(true);
     };
 
@@ -34,14 +72,22 @@ export function useCustomAlert() {
         alertOnPress();
     };
 
+    const handleAlertCancel = () => {
+        setAlertVisible(false);
+        alertOnCancel();
+    };
+
     return {
         alertVisible,
         alertType,
         alertTitle,
         alertMessage,
         alertButtonText,
+        alertCancelText,
         showAlert,
         hideAlert,
         handleAlertPress,
+        handleAlertCancel,
     };
 }
+

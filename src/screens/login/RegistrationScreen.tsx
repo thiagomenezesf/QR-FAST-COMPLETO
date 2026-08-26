@@ -7,6 +7,8 @@ import { Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase'; 
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -17,16 +19,30 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
   const navigation = useNavigation<NavProps>();
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert("Erro", "Preencha todos os campos!");
+      // Alert.alert("Erro", "Preencha todos os campos!");
+      showAlert('warning', 'Erro', 'Preencha todos os campos!', 'OK');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Erro", "As senhas não coincidem!");
+      // Alert.alert("Erro", "As senhas não coincidem!");
+      showAlert('warning', 'Erro', 'As senhas não coincidem!', 'OK');
       return;
     }
 
@@ -60,6 +76,7 @@ export default function RegisterScreen() {
             {
               id: data.user.id,
               full_name: name,
+              email: email,
               role: 'user', 
             },
           ]);
@@ -73,20 +90,23 @@ export default function RegisterScreen() {
 
       // 3. Verificação de Fluxo de Confirmação (E-mail)
       if (data.user && data.session === null) {
-        Alert.alert(
-          "Verifique seu e-mail", 
-          "Enviamos um link de confirmação. Você precisa confirmar para conseguir logar."
-        );
+        // Alert.alert(
+        //   "Verifique seu e-mail", 
+        //   "Enviamos um link de confirmação. Você precisa confirmar para conseguir logar."
+        // );
+        showAlert('info', 'Verifique seu e-mail', 'Enviamos um link de confirmação. Você precisa confirmar para conseguir logar.', 'OK');
         navigation.navigate('Login');
       } else {
         // Se o e-mail confirm já estiver off, o login é automático
-        Alert.alert("Sucesso", "Conta criada com sucesso!");
+        // Alert.alert("Sucesso", "Conta criada com sucesso!");
+        showAlert('success', 'Sucesso', 'Conta criada com sucesso!', 'OK');
         // O AppNavigator agora deve redirecionar sozinho pelo AuthListener
       }
 
     } catch (error: any) {
       console.error("🔥 Erro no cadastro:", error);
-      Alert.alert("Erro no Cadastro", error.message || "Ocorreu um erro interno.");
+      // Alert.alert("Erro no Cadastro", error.message || "Ocorreu um erro interno.");
+      showAlert('error', 'Erro no Cadastro', error.message || "Ocorreu um erro interno.", 'OK');
     } finally {
       setLoading(false);
     }
@@ -188,6 +208,17 @@ export default function RegisterScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <CustomAlert
+                      visible={alertVisible}
+                      type={alertType}
+                      title={alertTitle}
+                      message={alertMessage}
+                      buttonText={alertButtonText}
+                      cancelText={alertCancelText}
+                      onPress={handleAlertPress}
+                      onCancel={handleAlertCancel}
+                  />
     </KeyboardAvoidingView>
   );
 }

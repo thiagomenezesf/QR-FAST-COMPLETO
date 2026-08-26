@@ -6,6 +6,8 @@ import { supabase } from '../../services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg'; 
 import { LinearGradient } from 'expo-linear-gradient';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type PersonDetailRouteProp = RouteProp<RootStackParamList, 'PessoaDetalhes'>;
 
@@ -17,6 +19,18 @@ export default function PersonDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [data, setData] = useState<any>(null);
+
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
 
   useEffect(() => {
     fetchTicketDetails();
@@ -47,7 +61,7 @@ export default function PersonDetailScreen() {
 
       if (ticketError) throw ticketError;
 
-      let finalData = { ...ticketData, profiles: null };
+      let finalData: any = { ...ticketData, profiles: null };
 
       if (ticketData.user_id) {
         const { data: profileData } = await supabase
@@ -61,7 +75,8 @@ export default function PersonDetailScreen() {
 
       setData(finalData);
     } catch (error: any) {
-      Alert.alert("Erro", "Não foi possível carregar os detalhes.");
+      // Alert.alert("Erro", "Não foi possível carregar os detalhes.");
+      showAlert('error', 'Erro', 'Não foi possível carregar os detalhes.', 'OK')
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -70,15 +85,46 @@ export default function PersonDetailScreen() {
 
   // FUNÇÃO ATUALIZADA: Agora valida se o banco realmente deletou
   const handleDeleteTicket = async () => {
-    Alert.alert(
-      "Confirmar Exclusão",
-      "Tem certeza que deseja cancelar e excluir este ingresso permanentemente?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Excluir Ingresso", 
-          style: "destructive", 
-          onPress: async () => {
+    // Alert.alert(
+    //   "Confirmar Exclusão",
+    //   "Tem certeza que deseja cancelar e excluir este ingresso permanentemente?",
+    //   [
+    //     { text: "Cancelar", style: "cancel" },
+    //     { 
+    //       text: "Excluir Ingresso", 
+    //       style: "destructive", 
+    //       onPress: async () => {
+    //         try {
+    //           setIsDeleting(true);
+              
+    //           // O .select() é crucial para confirmar se a Policy permitiu a ação
+    //           const { data: deletedData, error } = await supabase
+    //             .from('tickets')
+    //             .delete()
+    //             .eq('id', ticketId)
+    //             .select(); 
+
+    //           if (error) throw error;
+
+    //           // Se a lista vier vazia, significa que o RLS bloqueou a deleção
+    //           if (!deletedData || deletedData.length === 0) {
+    //             throw new Error("Você não tem permissão de administrador para excluir ingressos.");
+    //           }
+
+    //           Alert.alert("Sucesso", "Ingresso excluído com sucesso.");
+    //           navigation.goBack(); 
+    //         } catch (error: any) {
+    //           console.error("Erro na deleção:", error);
+    //           Alert.alert("Acesso Negado", error.message || "Erro ao tentar excluir.");
+    //         } finally {
+    //           setIsDeleting(false);
+    //         }
+    //       }
+    //     }
+    //   ]
+    // );
+    showAlert('warning', 'Confirmar Exclusão', 'Tem certeza que deseja cancelar e excluir este ingresso permanentemente?', 'Excluir Ingresso',
+      async () => {
             try {
               setIsDeleting(true);
               
@@ -96,18 +142,17 @@ export default function PersonDetailScreen() {
                 throw new Error("Você não tem permissão de administrador para excluir ingressos.");
               }
 
-              Alert.alert("Sucesso", "Ingresso excluído com sucesso.");
+              // Alert.alert("Sucesso", "Ingresso excluído com sucesso.");
+              showAlert('success', 'Sucesso', 'Ingresso excluído com sucesso!', 'OK');
               navigation.goBack(); 
             } catch (error: any) {
               console.error("Erro na deleção:", error);
-              Alert.alert("Acesso Negado", error.message || "Erro ao tentar excluir.");
+              // Alert.alert("Acesso Negado", error.message || "Erro ao tentar excluir.");
+              showAlert('error', 'Acesso Negado', error.message || "Erro ao tentar excluir.", 'OK');
             } finally {
               setIsDeleting(false);
             }
-          }
-        }
-      ]
-    );
+          }, 'Cancelar');
   };
 
   if (loading) {
@@ -209,6 +254,17 @@ export default function PersonDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <CustomAlert
+                      visible={alertVisible}
+                      type={alertType}
+                      title={alertTitle}
+                      message={alertMessage}
+                      buttonText={alertButtonText}
+                      cancelText={alertCancelText}
+                      onPress={handleAlertPress}
+                      onCancel={handleAlertCancel}
+                  />
     </ScrollView>
   );
 }

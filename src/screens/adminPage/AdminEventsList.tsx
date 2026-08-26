@@ -18,8 +18,10 @@ export default function AdminEventsList() {
     alertTitle,
     alertMessage,
     alertButtonText,
+    alertCancelText,
     showAlert,
     handleAlertPress,
+    handleAlertCancel,
     } = useCustomAlert();
 
     useEffect(() => {
@@ -47,25 +49,35 @@ export default function AdminEventsList() {
     };
 
     const handleDelete = (id: string, title: string) => {
-        Alert.alert(
-            'Confirmar Exclusão',
-            `Tens a certeza que desejas eliminar o evento "${title}"? Esta ação não pode ser desfeita.`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { 
-                    text: 'Eliminar', 
-                    style: 'destructive',
-                    onPress: async () => {
-                        const { error } = await supabase.from('events').delete().eq('id', id);
+        // Alert.alert(
+        //     'Confirmar Exclusão',
+        //     `Tens a certeza que desejas eliminar o evento "${title}"? Esta ação não pode ser desfeita.`,
+        //     [
+        //         { text: 'Cancelar', style: 'cancel' },
+        //         { 
+        //             text: 'Eliminar', 
+        //             style: 'destructive',
+        //             onPress: async () => {
+        //                 const { error } = await supabase.from('events').delete().eq('id', id);
+        //                 if (error) {
+        //                     Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+        //                 } else {
+        //                     fetchEvents(); // Recarrega a lista
+        //                 }
+        //             }
+        //         }
+        //     ]
+        // );
+        showAlert('warning', 'Confirmar Exclusão', `Tem certeza que deseja eliminar o evento "${title}"? Esta ação não pode ser desfeita.`, 'Eliminar', async () => {
+            const { error } = await supabase.from('events').delete().eq('id', id);
                         if (error) {
-                            Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+                            // Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+                            showAlert('error', 'Erro', 'Não foi possível eliminar o evento.', 'OK');
                         } else {
                             fetchEvents(); // Recarrega a lista
                         }
-                    }
-                }
-            ]
-        );
+        }, 'Cancelar');
+
     };
 
     const renderItem = ({ item }: any) => (
@@ -125,13 +137,15 @@ export default function AdminEventsList() {
             )}
 
             <CustomAlert
-                    visible={alertVisible}
-                    type={alertType}
-                    title={alertTitle}
-                    message={alertMessage}
-                    buttonText={alertButtonText}
-                    onPress={handleAlertPress}
-                    />
+                visible={alertVisible}
+                type={alertType}
+                title={alertTitle}
+                message={alertMessage}
+                buttonText={alertButtonText}
+                cancelText={alertCancelText}
+                onPress={handleAlertPress}
+                onCancel={handleAlertCancel}
+            />
         </View>
     );
 }

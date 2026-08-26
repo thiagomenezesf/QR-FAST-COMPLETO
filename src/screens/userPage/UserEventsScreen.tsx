@@ -6,6 +6,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'UserPage'>;
 
@@ -43,6 +45,18 @@ export default function UserEventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
 
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
   const fetchEvents = async () => {
     try {
       console.log("🔍 Buscando eventos no Supabase...");
@@ -60,7 +74,8 @@ export default function UserEventsScreen() {
       }
     } catch (error: any) {
       console.error('❌ Erro ao carregar eventos:', error.message);
-      Alert.alert("Erro", "Não foi possível carregar os eventos.");
+      // Alert.alert("Erro", "Não foi possível carregar os eventos.");
+      showAlert('error', 'Erro', 'Não foi possível carregar os eventos.', 'OK');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -208,6 +223,17 @@ export default function UserEventsScreen() {
           )
         }
       />
+
+      <CustomAlert
+                      visible={alertVisible}
+                      type={alertType}
+                      title={alertTitle}
+                      message={alertMessage}
+                      buttonText={alertButtonText}
+                      cancelText={alertCancelText}
+                      onPress={handleAlertPress}
+                      onCancel={handleAlertCancel}
+                  />
     </View>
   );
 }

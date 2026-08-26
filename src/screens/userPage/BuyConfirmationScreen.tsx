@@ -24,8 +24,10 @@ export default function BuyConfirmationScreen() {
     alertTitle,
     alertMessage,
     alertButtonText,
+    alertCancelText,
     showAlert,
     handleAlertPress,
+    handleAlertCancel,
   } = useCustomAlert();
 
   const restoreExistingPix = async (existingPaymentId: string) => {
@@ -287,13 +289,15 @@ export default function BuyConfirmationScreen() {
       </View>
 
       <CustomAlert
-        visible={alertVisible}
-        type={alertType}
-        title={alertTitle}
-        message={alertMessage}
-        buttonText={alertButtonText}
-        onPress={handleAlertPress}
-        />
+          visible={alertVisible}
+          type={alertType}
+          title={alertTitle}
+          message={alertMessage}
+          buttonText={alertButtonText}
+          cancelText={alertCancelText}
+          onPress={handleAlertPress}
+          onCancel={handleAlertCancel}
+      />
     </View>
   );
 }

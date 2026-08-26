@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { RootStackParamList } from '../../types/RootStackParamList';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'ComprarIngresso'>;
 
@@ -17,6 +19,19 @@ export default function BuyTicketScreen() {
   const [eventData, setEventData] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
 
   useEffect(() => {
     async function fetchEventDetails() {
@@ -106,10 +121,12 @@ export default function BuyTicketScreen() {
                   if (eventData.available_tickets > quantity) {
                     setQuantity((q) => q + 1);
                   } else {
-                    Alert.alert('Limite atingido', 'Não há mais ingressos disponíveis.');
+                    // Alert.alert('Limite atingido', 'Não há mais ingressos disponíveis.');
+                    showAlert('warning', 'Limite atingido', 'Não há mais ingressos disponíveis.', 'OK');
                   }
                 } else {
-                  Alert.alert('Aguarde', 'Carregando disponibilidade...');
+                  // Alert.alert('Aguarde', 'Carregando disponibilidade...');
+                  showAlert('info', 'Aguarde', 'Carregando disponibilidade...', 'OK');
                 }
               }}
               style={styles.counterButton}
@@ -147,7 +164,8 @@ export default function BuyTicketScreen() {
                 total,
               });
             } else {
-              Alert.alert('Indisponível', 'Quantidade selecionada não disponível em estoque.');
+              // Alert.alert('Indisponível', 'Quantidade selecionada não disponível em estoque.');
+              showAlert('warning', 'Indisponível', 'Quantidade selecionada não disponível em estoque.', 'OK');
             }
           }}
           disabled={loading}
@@ -168,6 +186,16 @@ export default function BuyTicketScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+      <CustomAlert
+                      visible={alertVisible}
+                      type={alertType}
+                      title={alertTitle}
+                      message={alertMessage}
+                      buttonText={alertButtonText}
+                      cancelText={alertCancelText}
+                      onPress={handleAlertPress}
+                      onCancel={handleAlertCancel}
+                  />
     </View>
   );
 }
