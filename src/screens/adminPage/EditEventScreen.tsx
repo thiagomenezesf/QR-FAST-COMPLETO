@@ -93,7 +93,6 @@ export default function EditEventScreen() {
             allowsEditing: true,
             aspect: [16, 9],
             quality: 0.7,
-            base64: true, // Necessário para converter em ArrayBuffer
         });
 
         if (!result.canceled) {
@@ -109,12 +108,20 @@ export default function EditEventScreen() {
             const fileName = `${eventId}-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            // Converte Base64 para ArrayBuffer (padrão para upload mobile no Supabase)
-            const arrayBuffer = decode(asset.base64);
+            let fileData: ArrayBuffer | Blob;
+            if (Platform.OS === 'web') {
+                const response = await fetch(asset.uri);
+                fileData = await response.blob();
+            } else {
+                if (!asset.base64) {
+                    throw new Error('Não foi possível ler a imagem selecionada.');
+                }
+                fileData = decode(asset.base64);
+            }
 
             const { data, error } = await supabase.storage
                 .from('event-banners')
-                .upload(filePath, arrayBuffer, {
+                .upload(filePath, fileData, {
                     contentType: `image/${fileExt}`,
                     upsert: true
                 });
@@ -129,7 +136,8 @@ export default function EditEventScreen() {
             // Alert.alert('Sucesso', 'Banner carregado com sucesso!');
             showAlert('success', 'Sucesso', 'Banner carregado com sucesso!', 'OK');
         } catch (error: any) {
-            Alert.alert('Erro no upload', error.message);
+            // Alert.alert('Erro no upload', error.message);
+            showAlert('error', 'Erro no upload', error.message || 'Ocorreu um erro ao tentar fazer o upload do banner.', 'OK');
         } finally {
             setUploading(false);
         }

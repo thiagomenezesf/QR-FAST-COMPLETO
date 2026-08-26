@@ -56,7 +56,6 @@ export default function CreateEventScreen() {
             allowsEditing: true,
             aspect: [16, 9],
             quality: 0.7,
-            base64: true,
         });
 
         if (!result.canceled) {
@@ -73,11 +72,20 @@ export default function CreateEventScreen() {
             const fileName = `new-event-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            const arrayBuffer = decode(asset.base64);
+            let fileData: ArrayBuffer | Blob;
+            if (Platform.OS === 'web') {
+                const response = await fetch(asset.uri);
+                fileData = await response.blob();
+            } else {
+                if (!asset.base64) {
+                    throw new Error('Não foi possível ler a imagem selecionada.');
+                }
+                fileData = decode(asset.base64);
+            }
 
             const { data, error } = await supabase.storage
                 .from('event-banners')
-                .upload(filePath, arrayBuffer, {
+                .upload(filePath, fileData, {
                     contentType: `image/${fileExt}`
                 });
 

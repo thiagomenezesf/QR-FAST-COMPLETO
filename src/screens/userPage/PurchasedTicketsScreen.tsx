@@ -138,6 +138,7 @@ export default function PurchasedTicketsScreen() {
     const isUsed = item.status === 'used';
     const quantity = Number(item.quantity ?? 1);
     const total = Number(item.total ?? event?.price ?? 0);
+    const ticketPrice = item.price;
 
     return (
       <TouchableOpacity
@@ -203,7 +204,7 @@ export default function PurchasedTicketsScreen() {
 
           <View style={styles.ticketFooter}>
             <Text style={styles.priceText}>
-              {isPending && quantity > 1 ? formatCurrency(total) : formatCurrency(event?.price)}
+              {isPending && quantity > 1 ? formatCurrency(total) : (isPending ?formatCurrency(event?.price) : formatCurrency(ticketPrice))}
             </Text>
             <Text style={[
                 styles.viewDetailsText, 
