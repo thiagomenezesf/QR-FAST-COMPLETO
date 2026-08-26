@@ -32,6 +32,9 @@ export default function BuyTicketScreen() {
     handleAlertCancel,
     } = useCustomAlert();
 
+    const formatCurrency = (value: number) => {
+    return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  };
 
   useEffect(() => {
     async function fetchEventDetails() {
@@ -101,7 +104,7 @@ export default function BuyTicketScreen() {
         <Text style={styles.sectionLabel}>Selecione a Quantidade</Text>
         
         <View style={styles.quantityCard}>
-          <Text style={styles.pricePerUnit}>Preço unitário: {event.price}</Text>
+          <Text style={styles.pricePerUnit}>Preço unitário: {formatCurrency(event.price)}</Text>
           <View style={styles.counterContainer}>
             <TouchableOpacity
               onPress={() => setQuantity((q) => Math.max(1, q - 1))}

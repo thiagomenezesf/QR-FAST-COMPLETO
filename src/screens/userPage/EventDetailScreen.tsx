@@ -19,6 +19,10 @@ export default function EventDetailsScreen() {
     const [loading, setLoading] = useState(true);
     const [dataBR, setDataBR] = useState<any>(null);
 
+    const formatCurrency = (value: number) => {
+    return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  };
+
     // 4. Busca os detalhes do evento ao carregar a tela
     useEffect(() => {
         async function fetchEventDetails() {
@@ -150,7 +154,7 @@ export default function EventDetailsScreen() {
             <View style={styles.bottomActions}>
                 <View>
                     <Text style={styles.priceLabel}>Valor do Ingresso</Text>
-                    <Text style={styles.priceValue}>{event.price}</Text>
+                    <Text style={styles.priceValue}>{formatCurrency(event.price)}</Text>
                 </View>
 
                 <TouchableOpacity
