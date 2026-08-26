@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // Importa
 export default function PurchasedTicketsScreen() {
   const navigation = useNavigation<any>();
   const [tickets, setTickets] = useState<any[]>([]);
+  const [totalTicketsCount, setTotalTicketsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isOfflineData, setIsOfflineData] = useState(false); // Para saber se estamos vendo dados locais
 
@@ -17,6 +18,56 @@ export default function PurchasedTicketsScreen() {
 
   // CHAVE ÚNICA PARA O ARMAZENAMENTO
   const TICKETS_CACHE_KEY = '@my_tickets_cache';
+
+  const formatCurrency = (value: number) => {
+    return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  };
+
+  const buildDisplayTickets = (rawTickets: any[]) => {
+    const pendingGroups: Record<string, any[]> = {};
+    const pendingOrder: string[] = [];
+    const normalItems: any[] = [];
+
+    rawTickets.forEach((ticket) => {
+      const isPending = ticket.status === 'pending' && !!ticket.payment_id;
+      if (!isPending) {
+        normalItems.push({
+          ...ticket,
+          groupedPending: false,
+          quantity: 1,
+          total: Number(ticket.price ?? ticket.events?.price ?? 0),
+        });
+        return;
+      }
+
+      const key = String(ticket.payment_id);
+      if (!pendingGroups[key]) {
+        pendingGroups[key] = [];
+        pendingOrder.push(key);
+      }
+      pendingGroups[key].push(ticket);
+    });
+
+    const groupedPendingItems = pendingOrder.map((paymentId) => {
+      const group = pendingGroups[paymentId];
+      const firstTicket = group[0];
+      const quantity = group.length;
+      const total = group.reduce((acc, current) => {
+        return acc + Number(current.price ?? current.events?.price ?? 0);
+      }, 0);
+
+      return {
+        ...firstTicket,
+        id: `pending-${paymentId}`,
+        groupedPending: true,
+        quantity,
+        total,
+        payment_id: paymentId,
+      };
+    });
+
+    return [...groupedPendingItems, ...normalItems];
+  };
 
   const fetchMyTickets = async () => {
     try {
@@ -34,7 +85,10 @@ export default function PurchasedTicketsScreen() {
         .select(`
           id,
           status,
+          payment_id,
           payment_status,
+          price,
+          created_at,
           events (
             id,
             title,
@@ -49,7 +103,8 @@ export default function PurchasedTicketsScreen() {
       if (error) throw error;
 
       if (data) {
-        setTickets(data);
+        setTotalTicketsCount(data.length);
+        setTickets(buildDisplayTickets(data));
         setIsOfflineData(false);
         // SALVA UMA CÓPIA LOCAL SEMPRE QUE BUSCAR COM SUCESSO
         await AsyncStorage.setItem(TICKETS_CACHE_KEY, JSON.stringify(data));
@@ -67,7 +122,9 @@ export default function PurchasedTicketsScreen() {
     try {
       const cachedData = await AsyncStorage.getItem(TICKETS_CACHE_KEY);
       if (cachedData !== null) {
-        setTickets(JSON.parse(cachedData));
+        const parsed = JSON.parse(cachedData);
+        setTotalTicketsCount(parsed.length);
+        setTickets(buildDisplayTickets(parsed));
         setIsOfflineData(true);
       }
     } catch (e) {
@@ -79,6 +136,9 @@ export default function PurchasedTicketsScreen() {
     const event = item.events;
     const isPending = item.status === 'pending';
     const isUsed = item.status === 'used';
+    const quantity = Number(item.quantity ?? 1);
+    const total = Number(item.total ?? event?.price ?? 0);
+    const ticketPrice = item.price;
 
     return (
       <TouchableOpacity
@@ -86,10 +146,12 @@ export default function PurchasedTicketsScreen() {
         disabled={isUsed}
         onPress={() => {
           if (isPending) {
-            Alert.alert(
-              "Pagamento em Processamento", 
-              "Estamos aguardando a confirmação do seu Pix. Assim que aprovado, seu QR Code aparecerá aqui!"
-            );
+            navigation.navigate('ConfirmarCompra', {
+              event,
+              quantity,
+              total,
+              paymentId: item.payment_id,
+            });
           } else {
             navigation.navigate('QRCodepage', { ticketId: item.id });
           }
@@ -141,12 +203,18 @@ export default function PurchasedTicketsScreen() {
           <View style={styles.dashedLine} />
 
           <View style={styles.ticketFooter}>
-            <Text style={styles.priceText}>{event?.price}</Text>
+            <Text style={styles.priceText}>
+              {isPending && quantity > 1 ? formatCurrency(total) : (isPending ?formatCurrency(event?.price) : formatCurrency(ticketPrice))}
+            </Text>
             <Text style={[
                 styles.viewDetailsText, 
                 { color: isUsed ? '#999' : (isPending ? '#999' : '#276818') }
             ]}>
-              {isUsed ? 'Ingresso já utilizado' : (isPending ? 'Aguardando Pix...' : 'Ver QR Code →')}
+              {isUsed
+                ? 'Ingresso já utilizado'
+                : (isPending
+                  ? `${quantity} ingresso(s) - Retomar Pix`
+                  : 'Ver QR Code →')}
             </Text>
           </View>
         </View>
@@ -182,9 +250,9 @@ export default function PurchasedTicketsScreen() {
           <ActivityIndicator color="#276818" />
         ) : (
           <Text style={styles.subtitle}>
-            {tickets.length === 0 
+            {totalTicketsCount === 0 
               ? "Você ainda não tem ingressos." 
-              : `Você tem ${tickets.length} ingresso(s)`}
+              : `Você tem ${totalTicketsCount} ingresso(s)`}
           </Text>
         )}
       </View>

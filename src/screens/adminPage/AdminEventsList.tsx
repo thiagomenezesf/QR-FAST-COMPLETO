@@ -3,12 +3,26 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 export default function AdminEventsList() {
     const navigation = useNavigation<any>();
     const isFocused = useIsFocused(); // Para recarregar a lista ao voltar da edição
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
 
     useEffect(() => {
         if (isFocused) {
@@ -27,32 +41,43 @@ export default function AdminEventsList() {
             if (error) throw error;
             setEvents(data || []);
         } catch (error: any) {
-            Alert.alert('Erro', 'Não foi possível carregar os eventos.');
+            //Alert.alert('Erro', 'Não foi possível carregar os eventos.');
+            showAlert('error', 'Erro', 'Não foi possível carregar os eventos.', 'OK');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = (id: string, title: string) => {
-        Alert.alert(
-            'Confirmar Exclusão',
-            `Tens a certeza que desejas eliminar o evento "${title}"? Esta ação não pode ser desfeita.`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { 
-                    text: 'Eliminar', 
-                    style: 'destructive',
-                    onPress: async () => {
-                        const { error } = await supabase.from('events').delete().eq('id', id);
+        // Alert.alert(
+        //     'Confirmar Exclusão',
+        //     `Tens a certeza que desejas eliminar o evento "${title}"? Esta ação não pode ser desfeita.`,
+        //     [
+        //         { text: 'Cancelar', style: 'cancel' },
+        //         { 
+        //             text: 'Eliminar', 
+        //             style: 'destructive',
+        //             onPress: async () => {
+        //                 const { error } = await supabase.from('events').delete().eq('id', id);
+        //                 if (error) {
+        //                     Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+        //                 } else {
+        //                     fetchEvents(); // Recarrega a lista
+        //                 }
+        //             }
+        //         }
+        //     ]
+        // );
+        showAlert('warning', 'Confirmar Exclusão', `Tem certeza que deseja eliminar o evento "${title}"? Esta ação não pode ser desfeita.`, 'Eliminar', async () => {
+            const { error } = await supabase.from('events').delete().eq('id', id);
                         if (error) {
-                            Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+                            // Alert.alert('Erro', 'Não foi possível eliminar o evento.');
+                            showAlert('error', 'Erro', 'Não foi possível eliminar o evento.', 'OK');
                         } else {
                             fetchEvents(); // Recarrega a lista
                         }
-                    }
-                }
-            ]
-        );
+        }, 'Cancelar');
+
     };
 
     const renderItem = ({ item }: any) => (
@@ -110,6 +135,17 @@ export default function AdminEventsList() {
                     }
                 />
             )}
+
+            <CustomAlert
+                visible={alertVisible}
+                type={alertType}
+                title={alertTitle}
+                message={alertMessage}
+                buttonText={alertButtonText}
+                cancelText={alertCancelText}
+                onPress={handleAlertPress}
+                onCancel={handleAlertCancel}
+            />
         </View>
     );
 }

@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type NavProps = NativeStackNavigationProp<RootStackParamList, 'UserPageNew'>;
 
@@ -25,6 +27,18 @@ export default function UserScreen() {
     const [showNotifications, setShowNotifications] = useState(false);
     const [hasNewNotifications, setHasNewNotifications] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
 
     // 1. Carregar dados iniciais (histórico)
     useEffect(() => {
@@ -171,7 +185,8 @@ export default function UserScreen() {
             await supabase.auth.signOut();
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
         } catch (error: any) {
-            Alert.alert("Erro ao sair", error.message);
+            // Alert.alert("Erro ao sair", error.message);
+            showAlert('error', 'Erro ao sair', error.message || 'Não foi possível sair da conta.', 'OK');
         }
     };
 
@@ -267,6 +282,17 @@ export default function UserScreen() {
                     <Text style={[styles.infoText, { color: '#2E7D32' }]}>Conta sincronizada e segura.</Text>
                 </View>
             </View>
+
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </View>
     );
 }

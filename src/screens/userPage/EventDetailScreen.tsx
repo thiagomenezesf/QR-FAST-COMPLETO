@@ -25,7 +25,7 @@ export default function EventDetailsScreen() {
             try {
                 setLoading(true);
                 const { data, error } = await supabase
-                    .from('events')
+                    .from('event_availability')
                     .select('*')
                     .eq('id', eventId)
                     .single();
@@ -45,7 +45,9 @@ export default function EventDetailsScreen() {
             }
         }
 
-        if (eventId) fetchEventDetails();
+        if (eventId) {
+            fetchEventDetails();
+        }
     }, [eventId]);
 
     // 5. Tela de carregamento

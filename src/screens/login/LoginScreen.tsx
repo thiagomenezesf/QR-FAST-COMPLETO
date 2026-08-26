@@ -7,6 +7,8 @@ import { Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +20,18 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<NavProps>();
 
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
   // LIMPA OS CAMPOS SEMPRE QUE A TELA GANHA FOCO
   useFocusEffect(
     useCallback(() => {
@@ -28,7 +42,8 @@ export default function LoginScreen() {
 
   const validaLogin = async () => {
     if (!email || !senha) {
-      Alert.alert("Erro", "Preencha todos os campos!");
+      // Alert.alert("Erro", "Preencha todos os campos!");
+      showAlert('warning', 'Erro', 'Preencha todos os campos!', 'OK');
       return;
     }
 
@@ -44,7 +59,8 @@ export default function LoginScreen() {
       if (error) {
         let mensagem = error.message;
         if (mensagem === "Invalid login credentials") mensagem = "E-mail ou senha incorretos.";
-        Alert.alert("Erro no Login", mensagem);
+        // Alert.alert("Erro no Login", mensagem);
+        showAlert('error', 'Erro no Login', mensagem, 'OK');
         return;
       }
 
@@ -73,7 +89,8 @@ export default function LoginScreen() {
 
     } catch (error: any) {
       console.error("Erro inesperado:", error);
-      Alert.alert("Erro", "Ocorreu um erro inesperado ao processar seu login.");
+      // Alert.alert("Erro", "Ocorreu um erro inesperado ao processar seu login.");
+      showAlert('error', 'Erro', 'Ocorreu um erro inesperado ao processar seu login.', 'OK');
     } finally {
       setLoading(false);
     }
@@ -164,6 +181,17 @@ export default function LoginScreen() {
 
         </View>
       </ScrollView>
+
+      <CustomAlert
+                      visible={alertVisible}
+                      type={alertType}
+                      title={alertTitle}
+                      message={alertMessage}
+                      buttonText={alertButtonText}
+                      cancelText={alertCancelText}
+                      onPress={handleAlertPress}
+                      onCancel={handleAlertCancel}
+                  />
     </KeyboardAvoidingView>
   );
 }

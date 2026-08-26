@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { Alert } from 'react-native'; 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 // 1. Importe o Linking do Expo
 import * as Linking from 'expo-linking';
@@ -18,9 +20,22 @@ export default function RecuperarSenhaScreen() {
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation<NavProps>();
 
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
+
     const handleRecuperar = async () => {
         if (!email.trim()) {
-            Alert.alert("Atenção", "Por favor, digite seu e-mail.");
+            // Alert.alert("Atenção", "Por favor, digite seu e-mail.");
+            showAlert('warning', 'Atenção', 'Por favor, digite seu e-mail.', 'OK');
             return;
         }
 
@@ -38,14 +53,16 @@ export default function RecuperarSenhaScreen() {
 
             if (error) throw error;
 
-            Alert.alert(
-                "Verifique seu e-mail (pode estar no Spam!)", 
-                "Enviamos um link de recuperação. Ao clicar nele, você será trazido de volta para o app para criar sua nova senha.",
-                [{ text: "OK", onPress: () => navigation.goBack() }]
-            );
+            // Alert.alert(
+            //     "Verifique seu e-mail (pode estar no Spam!)", 
+            //     "Enviamos um link de recuperação. Ao clicar nele, você será trazido de volta para o app para criar sua nova senha.",
+            //     [{ text: "OK", onPress: () => navigation.goBack() }]
+            // );
+            showAlert('info', 'Verifique seu e-mail (pode estar no Spam!)', 'Enviamos um link de recuperação. Ao clicar nele, você será trazido de volta para o app para criar sua nova senha.', 'OK', () => navigation.goBack());
 
         } catch (error: any) {
-            Alert.alert("Erro", error.message || "Ocorreu um erro ao tentar recuperar a senha.");
+            // Alert.alert("Erro", error.message || "Ocorreu um erro ao tentar recuperar a senha.");
+            showAlert('error', 'Erro', error.message || "Ocorreu um erro ao tentar recuperar a senha.", 'OK');
         } finally {
             setLoading(false);
         }
@@ -117,6 +134,17 @@ export default function RecuperarSenhaScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </KeyboardAvoidingView>
     );
 }

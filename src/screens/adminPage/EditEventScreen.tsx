@@ -6,6 +6,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 // Bibliotecas para Imagem
 import * as ImagePicker from 'expo-image-picker';
@@ -30,6 +32,18 @@ export default function EditEventScreen() {
     const [location, setLocation] = useState('');
     const [bannerUrl, setBannerUrl] = useState('');
     const [rulesInput, setRulesInput] = useState('');
+
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
 
     useEffect(() => {
         fetchEventDetails();
@@ -56,7 +70,8 @@ export default function EditEventScreen() {
                 setRulesInput(data.rules ? data.rules.join('\n') : '');
             }
         } catch (error: any) {
-            Alert.alert('Erro', 'Não foi possível carregar os dados.');
+            // Alert.alert('Erro', 'Não foi possível carregar os dados.');
+            showAlert('error', 'Erro', 'Não foi possível carregar os dados.', 'OK');
             navigation.goBack();
         } finally {
             setFetching(false);
@@ -68,7 +83,8 @@ export default function EditEventScreen() {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         
         if (status !== 'granted') {
-            Alert.alert('Permissão necessária', 'Precisamos de acesso às fotos para alterar o banner.');
+            // Alert.alert('Permissão necessária', 'Precisamos de acesso às fotos para alterar o banner.');
+            showAlert('error', 'Permissão necessária', 'Precisamos de acesso às fotos para alterar o banner.', 'OK');
             return;
         }
 
@@ -77,7 +93,6 @@ export default function EditEventScreen() {
             allowsEditing: true,
             aspect: [16, 9],
             quality: 0.7,
-            base64: true, // Necessário para converter em ArrayBuffer
         });
 
         if (!result.canceled) {
@@ -93,12 +108,20 @@ export default function EditEventScreen() {
             const fileName = `${eventId}-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            // Converte Base64 para ArrayBuffer (padrão para upload mobile no Supabase)
-            const arrayBuffer = decode(asset.base64);
+            let fileData: ArrayBuffer | Blob;
+            if (Platform.OS === 'web') {
+                const response = await fetch(asset.uri);
+                fileData = await response.blob();
+            } else {
+                if (!asset.base64) {
+                    throw new Error('Não foi possível ler a imagem selecionada.');
+                }
+                fileData = decode(asset.base64);
+            }
 
             const { data, error } = await supabase.storage
                 .from('event-banners')
-                .upload(filePath, arrayBuffer, {
+                .upload(filePath, fileData, {
                     contentType: `image/${fileExt}`,
                     upsert: true
                 });
@@ -110,9 +133,11 @@ export default function EditEventScreen() {
                 .getPublicUrl(filePath);
 
             setBannerUrl(publicUrl);
-            Alert.alert('Sucesso', 'Banner carregado com sucesso!');
+            // Alert.alert('Sucesso', 'Banner carregado com sucesso!');
+            showAlert('success', 'Sucesso', 'Banner carregado com sucesso!', 'OK');
         } catch (error: any) {
-            Alert.alert('Erro no upload', error.message);
+            // Alert.alert('Erro no upload', error.message);
+            showAlert('error', 'Erro no upload', error.message || 'Ocorreu um erro ao tentar fazer o upload do banner.', 'OK');
         } finally {
             setUploading(false);
         }
@@ -121,7 +146,8 @@ export default function EditEventScreen() {
     // --- SALVAR ALTERAÇÕES ---
     const handleUpdateEvent = async () => {
         if (!title.trim() || !price || !date || !location.trim()) {
-            Alert.alert('Atenção', 'Preencha os campos obrigatórios.');
+            // Alert.alert('Atenção', 'Preencha os campos obrigatórios.');
+            showAlert('warning', 'Atenção', 'Preencha os campos obrigatórios (Título, Preço, Localização e Data).', 'OK');
             return;
         }
 
@@ -135,7 +161,8 @@ export default function EditEventScreen() {
             const numericPrice = parseFloat(cleanedPrice);
 
             if (isNaN(numericPrice)) {
-                Alert.alert('Erro no Preço', 'Insira um valor numérico válido.');
+                // Alert.alert('Erro no Preço', 'Insira um valor numérico válido.');
+                showAlert('error', 'Erro no Preço', 'Insira um valor numérico válido.', 'OK');
                 setLoading(false);
                 return;
             }
@@ -156,9 +183,11 @@ export default function EditEventScreen() {
 
             if (error) throw error;
 
-            Alert.alert('Sucesso', 'Evento atualizado!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            // Alert.alert('Sucesso', 'Evento atualizado!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            showAlert('success', 'Sucesso', 'Evento atualizado com sucesso!', 'OK', () => navigation.goBack());
         } catch (error: any) {
-            Alert.alert('Erro ao atualizar', error.message);
+            // Alert.alert('Erro ao atualizar', error.message);
+            showAlert('error', 'Erro ao atualizar', error.message, 'OK');
         } finally {
             setLoading(false);
         }
@@ -239,6 +268,17 @@ export default function EditEventScreen() {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </KeyboardAvoidingView>
     );
 }

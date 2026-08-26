@@ -20,6 +20,8 @@ import { supabase } from '../../services/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/RootStackParamList';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 type Person = {
     id: string;
@@ -51,6 +53,18 @@ export default function PessoasScreen() {
     const [price, setPrice] = useState(''); 
     const [selectedEventId, setSelectedEventId] = useState<string | undefined>(undefined);
     const [eventOptions, setEventOptions] = useState<{label: string, value: any}[]>([]);
+
+    const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    alertCancelText,
+    showAlert,
+    handleAlertPress,
+    handleAlertCancel,
+    } = useCustomAlert();
 
     useEffect(() => {
         fetchData();
@@ -97,7 +111,8 @@ export default function PessoasScreen() {
 
             setPeople(formattedData);
         } catch (error: any) {
-            Alert.alert('Erro ao carregar', error.message);
+            // Alert.alert('Erro ao carregar', error.message);
+            showAlert('error', 'Erro ao carregar', error.message, 'OK');
         } finally {
             setLoading(false);
         }
@@ -117,7 +132,8 @@ export default function PessoasScreen() {
 
     async function handleAddPerson() {
         if (!name || !email || !selectedEventId || !price) {
-            Alert.alert('Atenção', 'Preencha todos os campos.');
+            // Alert.alert('Atenção', 'Preencha todos os campos.');
+            showAlert('warning', 'Atenção', 'Preencha todos os campos.', 'OK');
             return;
         }
         try {
@@ -142,7 +158,8 @@ export default function PessoasScreen() {
             setModalVisible(false);
             fetchData();
         } catch (error: any) { 
-            Alert.alert('Erro', error.message); 
+            // Alert.alert('Erro', error.message); 
+            showAlert('error', 'Erro', error.message, 'OK');
         } finally { 
             setLoading(false); 
         }
@@ -289,6 +306,17 @@ export default function PessoasScreen() {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
+
+            <CustomAlert
+                            visible={alertVisible}
+                            type={alertType}
+                            title={alertTitle}
+                            message={alertMessage}
+                            buttonText={alertButtonText}
+                            cancelText={alertCancelText}
+                            onPress={handleAlertPress}
+                            onCancel={handleAlertCancel}
+                        />
         </View>
     );
 }
