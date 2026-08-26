@@ -11,6 +11,7 @@ export default function PurchasedTicketsScreen() {
   const [totalTicketsCount, setTotalTicketsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isOfflineData, setIsOfflineData] = useState(false); // Para saber se estamos vendo dados locais
+  const [dataBR, setDataBR] = useState<any>(null);
 
   useEffect(() => {
     fetchMyTickets();
@@ -140,6 +141,11 @@ export default function PurchasedTicketsScreen() {
     const total = Number(item.total ?? event?.price ?? 0);
     const ticketPrice = item.price;
 
+    const dataString = event.date;
+                const [ano, mes, dia] = dataString.split('-');
+                const dataBRatt = `${dia}/${mes}/${ano}`;
+                setDataBR( dataBRatt );
+
     return (
       <TouchableOpacity
         activeOpacity={0.9}
@@ -192,7 +198,7 @@ export default function PurchasedTicketsScreen() {
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
               <Ionicons name="calendar-outline" size={14} color="#666" />
-              <Text style={styles.eventInfo}>{event?.date}</Text>
+              <Text style={styles.eventInfo}>{dataBR}</Text>
             </View>
             <View style={styles.infoItem}>
               <Ionicons name="location-outline" size={14} color="#666" />
