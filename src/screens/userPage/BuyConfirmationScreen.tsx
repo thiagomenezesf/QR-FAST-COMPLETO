@@ -5,16 +5,66 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
+import CustomAlert from '../../components/CustomAlert';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 export default function BuyConfirmationScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { event, quantity, total } = route.params;
+  const { event, quantity, total, paymentId } = route.params;
 
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState({ qrCode: '', qrCodeCopyPaste: '', paymentId: '' });
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutos
   const [isPaid, setIsPaid] = useState(false); // Estado para controlar se já foi pago
+
+  const {
+    alertVisible,
+    alertType,
+    alertTitle,
+    alertMessage,
+    alertButtonText,
+    showAlert,
+    handleAlertPress,
+  } = useCustomAlert();
+
+  const restoreExistingPix = async (existingPaymentId: string) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.functions.invoke('get-pix-payment', {
+        body: { paymentId: existingPaymentId }
+      });
+
+      if (!data?.payment_id) throw new Error('Pagamento não encontrado');
+
+      setPixData({
+        qrCode: data.qr_code || '',
+        qrCodeCopyPaste: data.qr_code_copy_paste || '',
+        paymentId: data.payment_id.toString(),
+      });
+
+      if (data.status === 'approved' || data.status === 'paid') {
+        setIsPaid(true);
+
+        await supabase
+          .from('tickets')
+          .update({
+            payment_status: 'paid',
+            status: 'valid',
+          })
+          .eq('payment_id', existingPaymentId);
+      }
+    } catch (error: any) {
+      console.error('Erro ao restaurar Pix existente:', error.message);
+
+      showAlert('error', 'Erro', 'Não foi possível restaurar o pagamento. Vamos gerar um novo Pix.', 'OK');
+      // Alert.alert('Erro', 'Não foi possível restaurar o pagamento. Vamos gerar um novo Pix.');
+      await generatePix();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 1. FUNÇÃO QUE CHAMA A EDGE FUNCTION
   const generatePix = async () => {
@@ -22,7 +72,8 @@ export default function BuyConfirmationScreen() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        Alert.alert('Erro', 'Usuário não autenticado.');
+        // Alert.alert('Erro', 'Usuário não autenticado.');
+        showAlert('error', 'Erro', 'Usuário não autenticado.', 'OK');
         return;
       }
 
@@ -50,7 +101,8 @@ export default function BuyConfirmationScreen() {
       }
     } catch (error: any) {
       console.error('Erro ao gerar Pix:', error.message);
-      Alert.alert('Erro', 'Não conseguimos gerar o pagamento. Tente novamente.');
+      // Alert.alert('Erro', 'Não conseguimos gerar o pagamento. Tente novamente.');
+      showAlert('error', 'Erro', 'Não conseguimos gerar o pagamento. Tente novamente.', 'OK');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -79,18 +131,23 @@ export default function BuyConfirmationScreen() {
           .update({ status: 'valid' })
           .eq('payment_id', pixData.paymentId.toString());
 
-        Alert.alert('Pagamento Confirmado! 🎉', 'Seu ingresso já está disponível.', [
-          { text: 'Ver Ingressos', onPress: () => navigation.navigate('IngressosComprados') }
-        ]);
+        // Alert.alert('Pagamento Confirmado! 🎉', 'Seu ingresso já está disponível.', [
+        //   { text: 'Ver Ingressos', onPress: () => navigation.navigate('IngressosComprados') }
+        // ]);
+        showAlert('success', 'Pagamento Confirmado! 🎉', 'Seu ingresso já está disponível.', 'Ver Ingressos', () => navigation.navigate('IngressosComprados'));
       }
     } catch (err) {
       // Silencioso: continua tentando no próximo intervalo
     }
   };
 
-  // useEffect 1: Roda apenas UMA vez ao abrir a tela para gerar o QR Code
+  // useEffect 1: Roda apenas UMA vez ao abrir a tela para gerar/restaurar o QR Code
   useEffect(() => {
-    generatePix();
+    if (paymentId) {
+      restoreExistingPix(paymentId);
+    } else {
+      generatePix();
+    }
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev <= 1 ? 0 : prev - 1));
@@ -123,7 +180,8 @@ export default function BuyConfirmationScreen() {
   const copyToClipboard = async () => {
     if (!pixData.qrCodeCopyPaste) return;
     await Clipboard.setStringAsync(pixData.qrCodeCopyPaste);
-    Alert.alert('Sucesso', 'Código Pix copiado!');
+    // Alert.alert('Sucesso', 'Código Pix copiado!');
+    showAlert('success', 'Sucesso', 'Código Pix copiado!', 'OK');
   };
 
   return (
@@ -227,6 +285,15 @@ export default function BuyConfirmationScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      <CustomAlert
+        visible={alertVisible}
+        type={alertType}
+        title={alertTitle}
+        message={alertMessage}
+        buttonText={alertButtonText}
+        onPress={handleAlertPress}
+        />
     </View>
   );
 }

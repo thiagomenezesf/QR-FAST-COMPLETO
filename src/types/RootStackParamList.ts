@@ -15,7 +15,8 @@ export type RootStackParamList = {
   ConfirmarCompra: { 
     event: Event; 
     quantity: number; 
-    total: number; 
+    total: number;
+    paymentId?: string;
   };
   IngressosComprados: undefined;
   QRCodepage: {ticketId: string};

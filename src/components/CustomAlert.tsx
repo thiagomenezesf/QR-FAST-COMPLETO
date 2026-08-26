@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     container: {
         width: '100%',
         maxWidth: 380,
-        backgroundColor: '#FFF',
+        backgroundColor: '#4d4c4c',
         borderRadius: 24,
         padding: 30,
         alignItems: 'center',
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
 
     message: {
         fontSize: 16,
-        color: '#555',
+        color: '#c2c2c2',
         textAlign: 'center',
         lineHeight: 23,
         marginTop: 10,
