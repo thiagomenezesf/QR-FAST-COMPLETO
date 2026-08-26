@@ -19,6 +19,7 @@ export default function BuyTicketScreen() {
   const [eventData, setEventData] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [dataBR, setDataBR] = useState<any>(null);
 
   const {
     alertVisible,
@@ -48,6 +49,12 @@ export default function BuyTicketScreen() {
 
         if (error) throw error;
         setEventData(data);
+
+        const dataString = data.date;
+                const [ano, mes, dia] = dataString.split('-');
+                const dataBRatt = `${dia}/${mes}/${ano}`;
+                setDataBR( dataBRatt );
+
       } catch (error) {
         console.error('Erro ao buscar detalhes:', error);
       } finally {
@@ -96,7 +103,7 @@ export default function BuyTicketScreen() {
           </View>
           <View style={styles.eventDetails}>
             <Text style={styles.eventTitle}>{event.title}</Text>
-            <Text style={styles.eventInfo}>📅 {event.date}</Text>
+            <Text style={styles.eventInfo}>📅 {dataBR}</Text>
             <Text style={styles.eventInfo} numberOfLines={1}>📍 {event.location}</Text>
           </View>
         </View>
