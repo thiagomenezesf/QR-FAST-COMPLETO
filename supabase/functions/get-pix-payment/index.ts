@@ -43,6 +43,7 @@ serve(async (req) => {
       JSON.stringify({
         payment_id: mpData.id,
         status: mpData.status,
+        date_of_expiration: mpData.date_of_expiration || null,
         qr_code: qrCodeData?.qr_code_base64 || '',
         qr_code_copy_paste: qrCodeData?.qr_code || '',
       }),

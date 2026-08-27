@@ -46,7 +46,7 @@ function AuthListener() {
       if (event === 'SIGNED_IN' && session) {
         const role = await getUserRole(session);
         
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'assistant') {
           navigation.reset({ index: 0, routes: [{ name: 'Administração' }] });
         } else {
           navigation.reset({ index: 0, routes: [{ name: 'UserPageNew' }] });
@@ -77,7 +77,7 @@ export default function AppNavigator() {
         
         if (session) {
           const role = await getUserRole(session);
-          if (role === 'admin') setInitialRoute('Administração');
+          if (role === 'admin' || role === 'assistant') setInitialRoute('Administração');
           else setInitialRoute('UserPageNew');
         }
       } catch (error) {
@@ -118,6 +118,8 @@ export default function AppNavigator() {
           <Stack.Screen name="CreateEvent" component={Admin.CreateEventScreen}/>
           <Stack.Screen name="EditEvent" component={Admin.EditEventScreen}/>
           <Stack.Screen name="AdminEventsList" component={Admin.AdminEventsList}/>
+          <Stack.Screen name="UsuariosCadastrados" component={Admin.UserViewScreen}/>
+          <Stack.Screen name="EditUserRole" component={Admin.EditUserRoleScreen}/>
         </Stack.Group>
 
         <Stack.Group screenOptions={{ headerShown: false, title: 'Página do Usuário' }}>

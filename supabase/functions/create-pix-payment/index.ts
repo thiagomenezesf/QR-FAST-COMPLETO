@@ -29,6 +29,8 @@ serve(async (req) => {
     const firstName = nameParts[0]
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Fast'
 
+    const dateOfExpiration = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
     // 1. Chamada para o Mercado Pago
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
@@ -41,6 +43,7 @@ serve(async (req) => {
         transaction_amount: finalAmount, // Enviando o valor arredondado
         description: `Ingresso: QR Fast`,
         payment_method_id: 'pix',
+        date_of_expiration: dateOfExpiration,
         payer: {
           email: email || 'test@test.com',
           first_name: firstName,
@@ -71,6 +74,7 @@ serve(async (req) => {
       status: 'pending',
       payment_status: 'pending',
       payment_id: mpData.id.toString(),
+      expires_at: dateOfExpiration,
     }))
 
     const { error: dbError } = await supabase.from('tickets').insert(ticketsToInsert)
