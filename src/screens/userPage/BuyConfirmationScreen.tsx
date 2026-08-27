@@ -15,7 +15,7 @@ export default function BuyConfirmationScreen() {
 
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState({ qrCode: '', qrCodeCopyPaste: '', paymentId: '' });
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutos
+  const [timeLeft, setTimeLeft] = useState(60 * 60); // 1 hora
   const [isPaid, setIsPaid] = useState(false); // Estado para controlar se já foi pago
 
   const {
@@ -29,6 +29,39 @@ export default function BuyConfirmationScreen() {
     handleAlertPress,
     handleAlertCancel,
   } = useCustomAlert();
+
+  const fetchTimeLeft = async () => {
+    if (!paymentId) {
+    return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('expires_at')
+        .eq('payment_id', paymentId)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data && data.expires_at) {
+        const expiration = new Date(data.expires_at).getTime();
+        const now = Date.now();
+
+        const secondsLeft = Math.max(
+          0,
+          Math.floor((expiration - now) / 1000)
+        );
+        setTimeLeft(secondsLeft);
+      }
+    } catch (error: any) {
+      console.error('Erro ao buscar tempo restante:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimeLeft();
+  }, []);
 
   const restoreExistingPix = async (existingPaymentId: string) => {
     try {
@@ -60,9 +93,7 @@ export default function BuyConfirmationScreen() {
     } catch (error: any) {
       console.error('Erro ao restaurar Pix existente:', error.message);
 
-      showAlert('error', 'Erro', 'Não foi possível restaurar o pagamento. Vamos gerar um novo Pix.', 'OK');
-      // Alert.alert('Erro', 'Não foi possível restaurar o pagamento. Vamos gerar um novo Pix.');
-      await generatePix();
+      showAlert('error', 'Pagamento indisponível', 'Não foi possível recuperar este pagamento. Nenhum novo Pix será gerado.', 'OK');
     } finally {
       setLoading(false);
     }

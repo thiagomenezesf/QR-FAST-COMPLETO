@@ -45,7 +45,7 @@ export default function RecuperarSenhaScreen() {
             // 2. Gere a URL de redirecionamento dinamicamente
             // Isso cria o link correto tanto para Expo Go quan// Altere para garantir que NÃO use localhost
             const redirectTo = Linking.createURL('reset-password');
-            console.log("URL CORRETA:", redirectTo);
+            //console.log("URL CORRETA:", redirectTo);
 
             const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
                 redirectTo: redirectTo,

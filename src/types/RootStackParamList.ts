@@ -30,4 +30,6 @@ export type RootStackParamList = {
   CreateEvent: undefined;
   EditEvent: undefined;
   AdminEventsList: undefined;
+  UsuariosCadastrados: undefined;
+  EditUserRole: { userId: string };
 };

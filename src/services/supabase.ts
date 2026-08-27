@@ -7,8 +7,8 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // --- ADICIONE AQUI ---
-console.log("DEBUG SUPABASE URL:", supabaseUrl);
-console.log("DEBUG SUPABASE KEY:", supabaseAnonKey ? "Carregada ✅" : "Vazia ❌");
+// console.log("DEBUG SUPABASE URL:", supabaseUrl);
+// console.log("DEBUG SUPABASE KEY:", supabaseAnonKey ? "Carregada ✅" : "Vazia ❌");
 // ---------------------
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

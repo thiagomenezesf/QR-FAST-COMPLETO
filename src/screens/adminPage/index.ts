@@ -6,3 +6,5 @@ export { default as ScannerScreen } from './ScannerScreen';
 export { default as CreateEventScreen } from './CreateEventScreen';
 export { default as EditEventScreen } from './EditEventScreen';
 export { default as AdminEventsList } from './AdminEventsList';
+export { default as UserViewScreen } from './UserViewScreen';
+export { default as EditUserRoleScreen } from './EditUserRoleScreen';

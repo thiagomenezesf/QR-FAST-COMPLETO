@@ -80,7 +80,7 @@ export default function LoginScreen() {
         }
 
         // 3. Redirecionamento baseado na ROLE do banco de dados
-        if (profile?.role === 'admin') {
+        if (profile?.role === 'admin' || profile?.role === 'assistant') {
           navigation.navigate('Administração');
         } else {
           navigation.navigate('UserPageNew');
