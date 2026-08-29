@@ -9,13 +9,13 @@ import { supabase } from '../../services/supabase'; // Import do Supabase
 import CustomAlert from '../../components/CustomAlert';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 
-const MenuButton = ({ title, subtitle, icon, onPress, color, backGround = '#FFF' }: any) => (
+const MenuButton = ({ title, subtitle, icon, onPress, color, backGround = '#FFF', titleColor = '#1A1A1A', subtitleColor = '#666' }: any) => (
     <TouchableOpacity style={[styles.menuCard, {backgroundColor: backGround}]} onPress={onPress} activeOpacity={0.7}>
         <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
             <Ionicons name={icon} size={28} color={color} />
         </View>
-        <Text style={styles.menuTitle}>{title}</Text>
-        <Text style={styles.menuSubtitle}>{subtitle}</Text>
+        <Text style={[styles.menuTitle, { color: titleColor }]}>{title}</Text>
+        <Text style={[styles.menuSubtitle, { color: subtitleColor }]}>{subtitle}</Text>
     </TouchableOpacity>
 );
 
@@ -152,7 +152,9 @@ export default function AdmScreen() {
             </View>
             )}
 
+            
             <View style={[styles.grid, { marginTop: -15 }]}>
+                {userRole === 'admin' && (
                 <MenuButton 
                     title="Usuários Cadastrados"
                     subtitle="Ver lista de usuários"
@@ -160,17 +162,43 @@ export default function AdmScreen() {
                     color="#276818"
                     onPress={() => navigation.navigate('UsuariosCadastrados' as any)}
                 />
-
+                )}
+                {userRole === 'admin' && (
                 <MenuButton
                     style={{ backgroundColor: '#007434' }}
                     title="Explorar Eventos"
                     subtitle="Encontre as melhores festas e experiências"
                     icon="beer-outline"
                     color="#ffffff"
-                    backGround="#035a2f" 
+                    backGround="#0c5a33" 
+                    titleColor="#ffffff"
+                    subtitleColor="#ffffff"
                     onPress={() => navigation.navigate('UserPage' as any)} 
                 />
+                )}
+
+                {userRole === 'assistant' && (
+                <View style={styles.menuSection}>
+                                <TouchableOpacity activeOpacity={0.9} style={styles.mainCard} onPress={() => navigation.navigate('UserPage')}>
+                                    <LinearGradient colors={['#3BB85E', '#276818']} style={styles.cardGradient}>
+                                        <View style={styles.cardInfo}>
+                                            <Text style={styles.cardTitle}>Explorar Eventos</Text>
+                                            <Text style={styles.cardDescription}>Encontre as melhores festas e experiências</Text>
+                                        </View>
+                                        <View style={styles.cardIconWrapper}>
+                                            <Ionicons name="beer-outline" size={40} color="#FFF" />
+                                        </View>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                
+                                
+                
+                </View>
+                )}
+                
             </View>
+                
+            <Text style={styles.sectionTitle}>Sua Carteira</Text>
 
             <TouchableOpacity activeOpacity={0.7} style={styles.secondaryCard} onPress={() => navigation.navigate('IngressosComprados')}>
                                 <View style={styles.secondaryIconContainer}>
@@ -182,6 +210,11 @@ export default function AdmScreen() {
                                 </View>
                                 <Ionicons name="chevron-forward" size={20} color="#CCC" />
                             </TouchableOpacity>
+
+                            <View style={[styles.infoBanner, { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' }]}>
+                                <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
+                                <Text style={[styles.infoText, { color: '#2E7D32' }]}>Conta sincronizada e segura.</Text>
+                            </View>
 
             <View style={styles.scannerSection}>
                 <Text style={styles.sectionLabel}>Ação Principal</Text>
@@ -298,7 +331,7 @@ const styles = StyleSheet.create({
     buttonPressedScale: { transform: [{ scale: 0.98 }], opacity: 0.9 },
     qrContent: { flexDirection: 'row', alignItems: 'center' },
     qrIconWrapper: { width: 60, height: 60, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 20 },
-    cardTitle: { color: 'white', fontWeight: 'bold', fontSize: 20 },
+    // cardTitle: { color: 'white', fontWeight: 'bold', fontSize: 20 },
     cardSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 2 },
     infoBox: { flexDirection: 'row', backgroundColor: '#EEE', padding: 15, borderRadius: 15, alignItems: 'center', marginTop: 'auto', marginBottom: 40 },
     infoText: { fontSize: 13, color: '#666', marginLeft: 10, flex: 1 },
@@ -307,5 +340,24 @@ const styles = StyleSheet.create({
 
     scrollContent: {
     paddingBottom: 30,
+    },
+    menuSection: { flex: 1, paddingHorizontal: 0, paddingTop: 30, marginBottom: -25 },
+    mainCard: {
+        height: 160, borderRadius: 25, overflow: 'hidden',
+        marginBottom: 30, elevation: 8, shadowColor: '#276818',
+    },
+    cardGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: 25 },
+    cardInfo: { flex: 1, paddingRight: 10 },
+    cardTitle: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
+    cardDescription: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 8, lineHeight: 20 },
+    cardIconWrapper: {
+        width: 70, height: 70, backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 20, justifyContent: 'center', alignItems: 'center'
+    },
+    sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 15, marginLeft: 5 },
+    infoBanner: {
+        flexDirection: 'row', alignItems: 'center',
+        padding: 15, borderRadius: 15, marginTop: 'auto', marginBottom: 40,
+        borderWidth: 1,
     }
 });
